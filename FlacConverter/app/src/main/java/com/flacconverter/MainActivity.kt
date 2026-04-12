@@ -17,7 +17,6 @@ import com.flacconverter.model.AudioFile
 import com.flacconverter.model.ConversionSettings
 import com.flacconverter.model.OutputFormat
 import com.flacconverter.adapter.FileAdapter
-import com.flacconverter.converter.AudioConverter
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
