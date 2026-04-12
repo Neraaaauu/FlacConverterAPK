@@ -1,0 +1,45 @@
+name: Compilar APK FlacConverter
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Localizar y dar permisos al Gradlew
+      run: |
+        # Buscamos el archivo gradlew en todo el repo
+        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+        if [ -z "$GRADLEW_PATH" ]; then
+          echo "ERROR: No se encontró el archivo gradlew en ninguna carpeta."
+          exit 1
+        fi
+        echo "Archivo encontrado en: $GRADLEW_PATH"
+        chmod +x "$GRADLEW_PATH"
+        # Guardamos la ruta de la carpeta para el siguiente paso
+        echo "GRADLEW_DIR=$(dirname "$GRADLEW_PATH")" >> $GITHUB_ENV
+
+    - name: Compilar APK de Debug
+      run: |
+        cd ${{ env.GRADLEW_DIR }}
+        ./gradlew assembleDebug
+
+    - name: Subir APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlacConverter-Debug
+        # Buscamos el APK donde sea que haya quedado
+        path: "**/build/outputs/apk/debug/*.apk"
