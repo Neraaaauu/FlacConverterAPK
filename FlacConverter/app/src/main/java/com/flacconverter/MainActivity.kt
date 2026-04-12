@@ -126,8 +126,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateBitrateOptions() {
-        val showBitrate = outputFormat != OutputFormat.OPUS
-        val showQuality = outputFormat == OutputFormat.OGG || outputFormat == OutputFormat.OPUS
+        // Opus, MP3 y AAC utilizan Bitrate. Solo OGG Vorbis usa la escala de calidad 0-10.
+        val showBitrate = outputFormat != OutputFormat.OGG
+        val showQuality = outputFormat == OutputFormat.OGG
+        
         binding.layoutBitrate.visibility = if (showBitrate) View.VISIBLE else View.GONE
         binding.layoutQuality.visibility = if (showQuality) View.VISIBLE else View.GONE
     }
