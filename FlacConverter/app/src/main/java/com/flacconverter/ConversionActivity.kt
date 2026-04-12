@@ -79,7 +79,7 @@ class ConversionActivity : AppCompatActivity() {
 
     private fun convertFile(audioFile: AudioFile, settings: ConversionSettings): ConversionResult {
         return try {
-            // Copy input to temp file
+            // 1. Copiar input a un archivo temporal
             val inputStream = contentResolver.openInputStream(audioFile.uri)
                 ?: return ConversionResult(false, error = "No se pudo leer el archivo")
 
@@ -90,58 +90,54 @@ class ConversionActivity : AppCompatActivity() {
             val baseName = audioFile.name.substringBeforeLast(".")
             val outputName = "$baseName.$ext"
 
-            val outputFile = if (settings.outputUri != null) {
-                // Use selected output folder
-                val docFile = androidx.documentfile.provider.DocumentFile
-                    .fromTreeUri(this, settings.outputUri)
-                    ?.createFile("audio/$ext", outputName)
-                val outStream = docFile?.uri?.let { contentResolver.openOutputStream(it) }
-                    ?: return ConversionResult(false, error = "No se pudo crear archivo de salida")
-                val tempOut = File(cacheDir, "output_${System.currentTimeMillis()}.$ext")
-                tempOut.also { it.createNewFile() }
-            } else {
-                // Use Downloads
-                val downloads = android.os.Environment.getExternalStoragePublicDirectory(
-                    android.os.Environment.DIRECTORY_DOWNLOADS)
-                File(downloads, outputName)
-            }
+            // 2. Usar SIEMPRE un archivo temporal para la salida de FFmpeg
+            val tempOutput = File(cacheDir, "output_${System.currentTimeMillis()}.$ext")
 
-            val command = buildFFmpegCommand(tempInput.absolutePath, outputFile.absolutePath, settings)
+            val command = buildFFmpegCommand(tempInput.absolutePath, tempOutput.absolutePath, settings)
             val session = FFmpegKit.execute(command)
 
             tempInput.delete()
 
+            // 3. Evaluar el resultado y mover el archivo solo si fue exitoso
             if (ReturnCode.isSuccess(session.returnCode)) {
-                // If output uri was selected, move file there
                 if (settings.outputUri != null) {
+                    // Mover a la carpeta seleccionada por el usuario (se crea solo una vez)
                     val docFile = androidx.documentfile.provider.DocumentFile
                         .fromTreeUri(this, settings.outputUri)
-                        ?.createFile("audio/$ext", outputName)
-                    val outStream = docFile?.uri?.let { contentResolver.openOutputStream(it) }
-                    if (outStream != null) {
-                        outputFile.inputStream().use { it.copyTo(outStream) }
+                        ?.createFile("audio/$ext", outputName) 
+                    
+                    docFile?.uri?.let { destUri ->
+                        contentResolver.openOutputStream(destUri)?.use { outStream ->
+                            tempOutput.inputStream().use { it.copyTo(outStream) }
+                        }
                     }
-                    outputFile.delete()
+                } else {
+                    // Mover a la carpeta de Descargas por defecto
+                    val downloads = android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_DOWNLOADS)
+                    downloads.mkdirs()
+                    val finalFile = File(downloads, outputName)
+                    tempOutput.copyTo(finalFile, overwrite = true)
                 }
+                
+                tempOutput.delete()
                 ConversionResult(true, outputName = outputName)
             } else {
-                outputFile.delete()
+                tempOutput.delete()
                 ConversionResult(false, error = "Error FFmpeg: ${session.failStackTrace?.take(100)}")
             }
         } catch (e: Exception) {
             ConversionResult(false, error = e.message ?: "Error desconocido")
         }
     }
-
     private fun buildFFmpegCommand(input: String, output: String, settings: ConversionSettings): String {
         return when (settings.outputFormat) {
             OutputFormat.MP3 -> "-i \"$input\" -codec:a libmp3lame -b:a ${settings.bitrate} -y \"$output\""
             OutputFormat.OGG -> "-i \"$input\" -codec:a libvorbis -b:a ${settings.bitrate} -q:a ${settings.quality} -y \"$output\""
-            OutputFormat.OPUS -> "-i \"$input\" -codec:a libopus -b:a 128k -y \"$output\""
+            OutputFormat.OPUS -> "-i \"$input\" -codec:a libopus -b:a ${settings.bitrate} -vbr on -y \"$output\""
             OutputFormat.AAC -> "-i \"$input\" -codec:a aac -b:a ${settings.bitrate} -y \"$output\""
         }
     }
-
     private fun addLog(message: String, success: Boolean) {
         runOnUiThread {
             val current = binding.tvLog.text.toString()
