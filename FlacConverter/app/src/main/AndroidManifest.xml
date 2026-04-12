@@ -10,9 +10,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_audio_file"
         android:label="FLAC Converter"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/ic_audio_file"
         android:supportsRtl="true"
         android:theme="@style/Theme.FlacConverter">
 
