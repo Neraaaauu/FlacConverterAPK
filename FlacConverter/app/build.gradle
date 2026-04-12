@@ -60,8 +60,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // --- FFmpeg (audio only - lightweight) ---
-    implementation 'com.arthenica:ffmpeg-kit-audio:4.5.1'
-
+    implementation 'com.github.tanersener:ffmpeg-kit:audio-https-gpl-4.5.LTS'
     // --- Room (history database) ---
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
