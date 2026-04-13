@@ -36,8 +36,8 @@ El motor de conversión de FFmpeg incluye los códecs necesarios (`libmp3lame`, 
 
 | Tipo de Build | Peso Estimado |
 | :--- | :--- |
-| **Debug** | ~25 MB - 35 MB |
-| **Release** *(minificada)* | ~18 MB - 22 MB |
+| **Debug** | ~60 MB - 75 MB |
+| **Release** *(Se expandio XD)* | ~80 MB - 85 MB |
 
 ---
 
